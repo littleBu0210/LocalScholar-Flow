@@ -1,0 +1,10 @@
+ignored
+src/__pycache__/
+pdf
+models
+output
+models*
+*.tar.gz
+
+# README translation script (not for public use)
+src/translate_readme.py

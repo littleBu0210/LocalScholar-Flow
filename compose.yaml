@@ -1,0 +1,93 @@
+services:
+  # ==========================================
+  # Service 1: MongoDB (state storage)
+  # ==========================================
+  mongodb:
+    image: mongo:7.0
+    container_name: LocalScholar-Flow-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: paper_flow
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    ports:
+      - "27016:27017"
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # Service 2: MinerU (PDF parsing)
+  # ==========================================
+  mineru:
+    build:
+      context: ./tools/mineru
+      dockerfile: Dockerfile
+    image: mineru:latest
+    container_name: mineru-runner
+    restart: "no"
+    environment:
+      - MINERU_MODEL_SOURCE=local
+    volumes:
+      - ./models:/data/models
+      - ./models/mineru.json:/root/mineru.json
+    ports:
+      - "8000:8000"
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [gpu]
+    entrypoint: mineru-api
+    command:
+      --host 0.0.0.0
+      --port 8000
+      --gpu-memory-utilization 0.4
+
+  # ==========================================
+  # Service 3: Hunyuan (translation)
+  # ==========================================
+  hunyuan:
+    build:
+      context: ./tools/hunyuan
+      dockerfile: Dockerfile
+    image: localscholar-flow-hunyuan:latest
+    container_name: hunyuan-runner
+    restart: "no"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ./models:/models
+    ports:
+      - "8001:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: >
+      --model /models/HY-MT1.5-1.8B/current
+      --served-model-name hunyuan
+      --trust-remote-code
+      --host 0.0.0.0
+      --port 8000
+      --gpu-memory-utilization 0.4
+      --max-model-len 8192
+      --dtype bfloat16
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local

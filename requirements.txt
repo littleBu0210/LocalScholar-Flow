@@ -1,0 +1,39 @@
+# LocalScholar-Flow Python Dependencies
+# Python 3.8+ required
+
+# HTTP Requests
+requests>=2.31.0
+
+# Async HTTP Requests (for local translation API)
+aiohttp>=3.9.0
+
+# Environment Variables Management
+python-dotenv>=1.0.0
+
+# MongoDB Driver
+pymongo>=4.6.0
+
+# Model Download Libraries
+# ModelScope (for downloading models from ModelScope)
+modelscope>=1.0.0
+
+# HuggingFace Hub (for downloading models from HuggingFace)
+huggingface_hub>=0.20.0
+
+# Logging
+loguru>=0.7.0
+
+# Note: The following are Python standard libraries and don't need installation:
+# - pathlib
+# - json
+# - os
+# - shutil
+# - re
+# - threading
+# - queue
+# - logging
+# - time
+# - zipfile
+# - sys
+# - argparse
+# - asyncio

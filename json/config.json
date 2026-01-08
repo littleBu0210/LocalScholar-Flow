@@ -1,0 +1,29 @@
+{
+    "mongodb": {
+        "host": "localhost",
+        "port": 27016,
+        "database": "paper_flow",
+        "collection": "papers"
+    },
+    "paths": {
+        "pdf_dir": "./pdfs",
+        "pdf2md_dir": "./output/pdf2md",
+        "mdTrans_dir": "./output/mdTrans"
+    },
+    "miner_u": {
+        "api_url": "http://127.0.0.1:8000/file_parse"
+    },
+    "translation": {
+        "base_url": "http://localhost:8001/v1/chat/completions",
+        "api_key": "",
+        "model": "hunyuan",
+        "max_text_length": 3000,
+        "max_requests_per_second": 5,
+        "max_paragraphs_per_request": 10,
+        "temperature": 0.3,
+        "target_language": "Chinese",
+        "system_prompt": "You are a professional translator. Translate the text accurately while preserving the original formatting and structure. Note: Text containing <FORMULA_N> are placeholders for inline mathematical formulas - keep them exactly as they are without any modification.",
+        "user_prompt": "Translate the following segment into {target_language}, without additional explanation.\n{source_text}",
+        "request_timeout": 120
+    }
+}
