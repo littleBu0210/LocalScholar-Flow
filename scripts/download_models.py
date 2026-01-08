@@ -89,9 +89,27 @@ def create_symlink(source, target):
     target = Path(target)
     source = Path(source)
 
-    # Remove existing symlink/file
+    # Remove existing symlink/file with cross-platform support
+    # On Windows, os.remove() works for both file and directory symlinks
+    # On Unix, use rmdir() for directory symlinks, unlink() for file symlinks
     if target.exists() or target.is_symlink():
-        target.unlink()
+        try:
+            if is_windows():
+                # Windows: use os.remove() for all symlink types
+                os.remove(str(target))
+            else:
+                # Unix: handle directory vs file symlinks
+                if target.is_dir() and target.is_symlink():
+                    target.rmdir()
+                else:
+                    target.unlink()
+        except Exception as e:
+            logger.debug(f"Could not remove existing target with normal method: {e}")
+            # Fallback to force removal
+            if target.is_dir():
+                shutil.rmtree(target, ignore_errors=True)
+            else:
+                target.unlink(missing_ok=True)
 
     try:
         # Calculate relative path from target's parent to source
