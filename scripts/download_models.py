@@ -98,18 +98,27 @@ def create_symlink(source, target):
                 # Windows: use os.remove() for all symlink types
                 os.remove(str(target))
             else:
-                # Unix: handle directory vs file symlinks
-                if target.is_dir() and target.is_symlink():
-                    target.rmdir()
+                # Unix: use os.remove() for symlinks (works for both file and directory)
+                # For real directories, we need shutil.rmtree()
+                if target.is_symlink():
+                    os.remove(str(target))
+                elif target.is_dir():
+                    shutil.rmtree(target, ignore_errors=True)
                 else:
                     target.unlink()
+            logger.debug(f"Removed existing target: {target}")
         except Exception as e:
             logger.debug(f"Could not remove existing target with normal method: {e}")
             # Fallback to force removal
-            if target.is_dir():
-                shutil.rmtree(target, ignore_errors=True)
-            else:
-                target.unlink(missing_ok=True)
+            try:
+                if target.is_dir():
+                    shutil.rmtree(target, ignore_errors=True)
+                else:
+                    target.unlink(missing_ok=True)
+                logger.debug(f"Force removed target: {target}")
+            except Exception as e2:
+                logger.warning(f"Failed to remove target {target}: {e2}")
+                # Continue anyway, symlink_to might still work
 
     try:
         # Calculate relative path from target's parent to source
@@ -120,10 +129,33 @@ def create_symlink(source, target):
             # If on different drives (Windows), fall back to absolute path
             relative_source = source
 
+        # Double-check target doesn't exist before creating symlink
+        if target.exists() or target.is_symlink():
+            logger.debug(f"Target still exists, removing again: {target}")
+            try:
+                if target.is_symlink() or target.is_file():
+                    os.remove(str(target))
+                elif target.is_dir():
+                    shutil.rmtree(target, ignore_errors=True)
+            except Exception as e:
+                logger.debug(f"Failed to remove target again: {e}")
+
         # Try creating a symlink with relative path
         target.symlink_to(relative_source)
         logger.info(f"✅ Created symlink: {target} -> {relative_source}")
         return True
+    except FileExistsError:
+        # This shouldn't happen after our checks, but handle it gracefully
+        logger.warning(f"⚠️  Symlink target already exists: {target}")
+        # Verify it's pointing to the right place
+        if target.is_symlink():
+            try:
+                existing_target = os.readlink(target)
+                logger.info(f"   Existing symlink points to: {existing_target}")
+                return True
+            except Exception:
+                pass
+        return False
     except OSError as e:
         if is_windows():
             # Windows: try junction for directories
