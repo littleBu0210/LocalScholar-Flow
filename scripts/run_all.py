@@ -65,6 +65,8 @@ def activate_conda_env(env_name="LocalScholar-Flow"):
             ["conda", "env", "list"],
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            errors='replace',
             check=True
         )
         if env_name in result.stdout:
@@ -106,7 +108,9 @@ def run_python_script(script_path, description):
             [sys.executable, str(script)],
             check=True,
             capture_output=False,
-            text=True
+            text=True,
+            encoding='utf-8',
+            errors='replace'
         )
         logger.success(f"✅ {description.replace('[', '').replace(']', '')} complete")
         return True

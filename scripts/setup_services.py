@@ -50,7 +50,9 @@ def run_command(cmd, check=True, capture_output=False):
             shell=shell,
             check=check,
             capture_output=capture_output,
-            text=True
+            text=True,
+            encoding='utf-8',
+            errors='replace'  # Replace characters that can't be decoded
         )
         return result
     except subprocess.CalledProcessError as e:
@@ -477,7 +479,7 @@ def build_docker_images(project_dir):
         # Build MinerU service
         logger.info("Building MinerU service...")
         try:
-            run_command(["docker", "compose", "build", "--no-cache", "mineru"], check=True)
+            run_command(["docker", "compose", "build",  "mineru"], check=True)
             logger.success("✅ MinerU build complete")
         except subprocess.CalledProcessError:
             logger.error("❌ MinerU build failed")
@@ -489,7 +491,7 @@ def build_docker_images(project_dir):
         logger.info("Building Hunyuan service...")
         try:
             run_command(
-                ["docker", "compose", "build", "--no-cache", "hunyuan"],
+                ["docker", "compose", "build",  "hunyuan"],
                 check=True
             )
             logger.success("✅ Hunyuan build complete")
