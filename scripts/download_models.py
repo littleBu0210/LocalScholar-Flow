@@ -374,10 +374,26 @@ class ModelDownloader:
             logger.error("  ❌ Invalid model directory: missing config.json")
             return False
 
-        # Remove old symlink if exists
+        # Remove old symlink if exists - use cross-platform removal
         if target_dir.is_symlink() or target_dir.exists():
-            target_dir.unlink()
-            logger.info("  🗑️  Deleted old symlink")
+            try:
+                if is_windows():
+                    # Windows: use os.remove() for all symlink types
+                    os.remove(str(target_dir))
+                else:
+                    # Unix: handle directory vs file symlinks
+                    if target_dir.is_dir() and target_dir.is_symlink():
+                        target_dir.rmdir()
+                    else:
+                        target_dir.unlink()
+                logger.info("  🗑️  Deleted old symlink")
+            except Exception as e:
+                logger.debug(f"Could not remove existing symlink with normal method: {e}")
+                # Fallback to force removal
+                if target_dir.is_dir():
+                    shutil.rmtree(target_dir, ignore_errors=True)
+                else:
+                    target_dir.unlink(missing_ok=True)
 
         # Create symlink
         success = create_symlink(source_dir, target_dir)
