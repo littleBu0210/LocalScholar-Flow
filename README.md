@@ -43,6 +43,11 @@
   - Easy deployment and setup
   - Isolated environment for dependencies
 
+- **🌍 Cross-Platform Support**
+  - Works on Linux, Windows, and macOS
+  - Automatic path handling for different operating systems
+  - Smart symlink management for Docker compatibility
+
 ---
 
 ## 🛠️ Installation
@@ -70,12 +75,23 @@
    ```
 
 3. **Download models**
+
+   **Linux / macOS:**
    ```bash
    # From ModelScope (default, recommended for users in China)
-   bash scripts/download.sh
+   python scripts/download_models.py
 
    # From HuggingFace
-   bash scripts/download.sh huggingface
+   python scripts/download_models.py --source huggingface
+   ```
+
+   **Windows (Command Prompt/PowerShell):**
+   ```cmd
+   # From ModelScope (default, recommended for users in China)
+   python scripts\download_models.py
+
+   # From HuggingFace
+   python scripts\download_models.py --source huggingface
    ```
 
    This downloads:
@@ -83,8 +99,15 @@
    - **Hunyuan model** (~3.6GB) for translation
 
 4. **Setup Docker services**
+
+   **Linux / macOS:**
    ```bash
-   bash scripts/setup_services.sh
+   python scripts/setup_services.py
+   ```
+
+   **Windows (Command Prompt/PowerShell):**
+   ```cmd
+   python scripts\setup_services.py
    ```
 
    This will:
@@ -103,9 +126,16 @@
    cp /path/to/your/papers/*.pdf pdfs/
    ```
 
-2. **Run the complete workflow**:
+2. **Run the complete workflow**
+
+   **Linux / macOS:**
    ```bash
-   bash run_all.sh
+   python scripts/run_all.py
+   ```
+
+   **Windows (Command Prompt/PowerShell):**
+   ```cmd
+   python scripts\run_all.py
    ```
 
    This automatically:
@@ -117,6 +147,7 @@
 
 You can also run each step separately:
 
+**Linux / macOS:**
 ```bash
 # Generate state from PDFs
 python src/generate_state.py
@@ -126,6 +157,18 @@ python src/pdf_to_md.py
 
 # Translate Markdown
 python src/translate_md.py
+```
+
+**Windows (Command Prompt/PowerShell):**
+```cmd
+# Generate state from PDFs
+python src\generate_state.py
+
+# Convert PDF to Markdown
+python src\pdf_to_md.py
+
+# Translate Markdown
+python src\translate_md.py
 ```
 
 ### Output Structure
@@ -206,16 +249,21 @@ LocalScholar-Flow/
 │   ├── translate_md.py     # Translate Markdown files
 │   └── database.py         # MongoDB operations
 ├── scripts/
-│   ├── download.sh         # Download models script
-│   ├── download_models.py  # Model download implementation
-│   └── setup_services.sh   # Docker services setup
+│   ├── download_models.py  # Download models (cross-platform)
+│   ├── setup_services.py   # Docker services setup (cross-platform)
+│   └── run_all.py          # Main workflow (cross-platform)
 ├── tools/
 │   ├── mineru/             # MinerU Docker configuration
 │   └── hunyuan/            # Hunyuan Docker configuration
 ├── json/
 │   └── config.json         # Configuration file
+├── pdfs/                   # Input PDF files
+├── output/                 # Output directory
+│   ├── pdf2md/             # Converted Markdown files
+│   └── mdTrans/            # Translated Markdown files
+├── models/                 # Model files directory
 ├── compose.yaml            # Docker Compose configuration
-└── run_all.sh              # Main workflow script
+└── requirements.txt        # Python dependencies
 ```
 
 ---
@@ -233,8 +281,15 @@ docker compose logs hunyuan
 ### Model Path Issues
 
 Re-run the setup script to fix model paths:
+
+**Linux / macOS:**
 ```bash
-bash scripts/setup_services.sh
+python scripts/setup_services.py
+```
+
+**Windows (Command Prompt/PowerShell):**
+```cmd
+python scripts\setup_services.py
 ```
 
 ### MongoDB Connection Issues
@@ -262,7 +317,7 @@ docker compose logs mongodb
 - **GPU**: NVIDIA GPU with 8GB+ VRAM
 - **RAM**: 16GB+ recommended
 - **Disk**: 20GB+ for models and processing
-- **OS**: Linux (tested on Ubuntu 20.04+)
+- **OS**: Linux/Windows/macOS (cross-platform Python scripts)
 
 ---
 

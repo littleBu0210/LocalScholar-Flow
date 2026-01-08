@@ -43,6 +43,11 @@
   - 简化部署和设置
   - 依赖隔离环境
 
+- **🌍 跨平台支持**
+  - 支持 Linux、Windows 和 macOS
+  - 自动处理不同操作系统的路径
+  - 智能符号链接管理，确保 Docker 兼容性
+
 ---
 
 ## 🛠️ 安装
@@ -70,12 +75,23 @@
    ```
 
 3. **下载模型**
+
+   **Linux / macOS:**
    ```bash
    # 从 ModelScope 下载（默认，推荐中国用户）
-   bash scripts/download.sh
+   python scripts/download_models.py
 
    # 从 HuggingFace 下载
-   bash scripts/download.sh huggingface
+   python scripts/download_models.py --source huggingface
+   ```
+
+   **Windows (命令提示符/PowerShell):**
+   ```cmd
+   # 从 ModelScope 下载（默认，推荐中国用户）
+   python scripts\download_models.py
+
+   # 从 HuggingFace 下载
+   python scripts\download_models.py --source huggingface
    ```
 
    这将下载：
@@ -83,8 +99,15 @@
    - **混元模型** (~3.6GB) 用于翻译
 
 4. **设置Docker服务**
+
+   **Linux / macOS:**
    ```bash
-   bash scripts/setup_services.sh
+   python scripts/setup_services.py
+   ```
+
+   **Windows (命令提示符/PowerShell):**
+   ```cmd
+   python scripts\setup_services.py
    ```
 
    这将：
@@ -103,9 +126,16 @@
    cp /path/to/your/papers/*.pdf pdfs/
    ```
 
-2. **运行完整工作流**：
+2. **运行完整工作流**
+
+   **Linux / macOS:**
    ```bash
-   bash run_all.sh
+   python scripts/run_all.py
+   ```
+
+   **Windows (命令提示符/PowerShell):**
+   ```cmd
+   python scripts\run_all.py
    ```
 
    这将自动：
@@ -117,6 +147,7 @@
 
 你也可以分别运行每个步骤：
 
+**Linux / macOS:**
 ```bash
 # 从PDF生成状态
 python src/generate_state.py
@@ -126,6 +157,18 @@ python src/pdf_to_md.py
 
 # 翻译Markdown
 python src/translate_md.py
+```
+
+**Windows (命令提示符/PowerShell):**
+```cmd
+# 从PDF生成状态
+python src\generate_state.py
+
+# 将PDF转换为Markdown
+python src\pdf_to_md.py
+
+# 翻译Markdown
+python src\translate_md.py
 ```
 
 ### 输出结构
@@ -206,16 +249,21 @@ LocalScholar-Flow/
 │   ├── translate_md.py     # 翻译Markdown文件
 │   └── database.py         # MongoDB操作
 ├── scripts/
-│   ├── download.sh         # 模型下载脚本
-│   ├── download_models.py  # 模型下载实现
-│   └── setup_services.sh   # Docker服务设置
+│   ├── download_models.py  # 模型下载（跨平台）
+│   ├── setup_services.py   # Docker服务设置（跨平台）
+│   └── run_all.py          # 主工作流（跨平台）
 ├── tools/
 │   ├── mineru/             # MinerU Docker配置
 │   └── hunyuan/            # 混元 Docker配置
 ├── json/
 │   └── config.json         # 配置文件
+├── pdfs/                   # 输入PDF文件
+├── output/                 # 输出目录
+│   ├── pdf2md/             # 转换后的Markdown文件
+│   └── mdTrans/            # 翻译后的Markdown文件
+├── models/                 # 模型文件目录
 ├── compose.yaml            # Docker Compose配置
-└── run_all.sh              # 主工作流脚本
+└── requirements.txt        # Python依赖
 ```
 
 ---
@@ -233,8 +281,15 @@ docker compose logs hunyuan
 ### 模型路径问题
 
 重新运行设置脚本修复模型路径：
+
+**Linux / macOS:**
 ```bash
-bash scripts/setup_services.sh
+python scripts/setup_services.py
+```
+
+**Windows (命令提示符/PowerShell):**
+```cmd
+python scripts\setup_services.py
 ```
 
 ### MongoDB 连接问题
@@ -262,7 +317,7 @@ docker compose logs mongodb
 - **GPU**: 8GB+ 显存的NVIDIA GPU
 - **内存**: 推荐16GB+
 - **磁盘**: 20GB+ 用于模型和处理
-- **操作系统**: Linux（在Ubuntu 20.04+上测试）
+- **操作系统**: Linux/Windows/macOS（跨平台Python脚本）
 
 ---
 

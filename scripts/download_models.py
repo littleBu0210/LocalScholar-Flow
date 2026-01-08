@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
 """
-LocalScholar-Flow Model Download Script
+LocalScholar-Flow Model Download Script (Cross-platform)
 Supports downloading required model files from ModelScope or HuggingFace
+Replaces: scripts/download.sh + original scripts/download_models.py
+
+Usage:
+    python scripts/download_models.py                    # Use ModelScope (default)
+    python scripts/download_models.py --source huggingface
+    python scripts/download_models.py --source modelscope --models-dir /path/to/models
 """
 import os
 import sys
 import json
+import shutil
 import argparse
+import platform
+import subprocess
 from pathlib import Path
 from loguru import logger
 
@@ -26,8 +35,133 @@ except ImportError:
     hf_snapshot_download = None
 
 
+# ============================================
+# Cross-platform utilities
+# ============================================
+
+def is_windows():
+    """Check if running on Windows"""
+    return platform.system() == 'Windows'
+
+
+def activate_conda_env(env_name="LocalScholar-Flow"):
+    """
+    Activate conda environment (cross-platform)
+    Note: This is mainly for the Bash script compatibility.
+    When running directly with Python, the environment should already be active.
+    """
+    if is_windows():
+        # On Windows, conda should be in PATH if installed
+        # Just verify the environment exists
+        try:
+            result = subprocess.run(
+                ["conda", "env", "list"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            if env_name not in result.stdout:
+                logger.warning(f"Conda environment '{env_name}' not found")
+                return False
+        except Exception as e:
+            logger.warning(f"Could not verify conda environment: {e}")
+            return False
+    else:
+        # On Unix, check standard conda paths
+        conda_paths = [
+            Path.home() / "anaconda3" / "etc" / "profile.d" / "conda.sh",
+            Path.home() / "miniconda3" / "etc" / "profile.d" / "conda.sh",
+        ]
+        conda_found = any(p.exists() for p in conda_paths)
+        if not conda_found:
+            logger.warning("Conda not found in standard paths")
+            return False
+
+    return True
+
+
+def create_symlink(source, target):
+    """
+    Create symlink with cross-platform support
+    Uses relative paths for Docker compatibility
+    On Windows without admin privileges, falls back to junction or copy
+    """
+    target = Path(target)
+    source = Path(source)
+
+    # Remove existing symlink/file
+    if target.exists() or target.is_symlink():
+        target.unlink()
+
+    try:
+        # Calculate relative path from target's parent to source
+        # This is crucial for Docker volume mounting compatibility
+        try:
+            relative_source = os.path.relpath(source, target.parent)
+        except ValueError:
+            # If on different drives (Windows), fall back to absolute path
+            relative_source = source
+
+        # Try creating a symlink with relative path
+        target.symlink_to(relative_source)
+        logger.info(f"✅ Created symlink: {target} -> {relative_source}")
+        return True
+    except OSError as e:
+        if is_windows():
+            # Windows: try junction for directories
+            if source.is_dir():
+                try:
+                    import ctypes
+                    from ctypes import wintypes
+
+                    # Create junction (requires no admin rights)
+                    CreateJunction = ctypes.windll.kernel32.CreateJunctionW
+                    CreateJunction.argtypes = [
+                        wintypes.LPCWSTR,
+                        wintypes.LPCWSTR
+                    ]
+
+                    target.mkdir(parents=True, exist_ok=True)
+                    if CreateJunction(str(target), str(source)):
+                        logger.info(f"✅ Created junction: {target} -> {source}")
+                        return True
+                except Exception:
+                    pass
+
+            # Fallback: copy directory (slow but works)
+            logger.warning(f"⚠️ Cannot create symlink, copying files instead...")
+            if source.is_dir():
+                shutil.copytree(source, target, dirs_exist_ok=True)
+                logger.info(f"✅ Copied directory: {target}")
+                return True
+            else:
+                shutil.copy2(source, target)
+                logger.info(f"✅ Copied file: {target}")
+                return True
+        else:
+            logger.error(f"❌ Failed to create symlink: {e}")
+            return False
+
+
+def find_path_by_pattern(base_dir, pattern):
+    """
+    Find paths matching a pattern
+    Returns list of matching paths
+    """
+    base_path = Path(base_dir)
+    if not base_path.exists():
+        return []
+
+    # Use pathlib's glob for cross-platform pattern matching
+    return list(base_path.glob(pattern))
+
+
+# ============================================
+# Model Downloader
+# ============================================
+
 class ModelDownloader:
-    """Model downloader"""
+    """Model downloader with cross-platform support"""
 
     # ModelScope model IDs
     MS_MINERU_MODEL = "OpenDataLab/MinerU2.5-2509-1.2B"
@@ -48,7 +182,10 @@ class ModelDownloader:
         self.source = source.lower()
 
         if self.source not in ["modelscope", "huggingface"]:
-            raise ValueError(f"Unsupported download source: {source}, please use 'modelscope' or 'huggingface'")
+            raise ValueError(
+                f"Unsupported download source: {source}, "
+                "please use 'modelscope' or 'huggingface'"
+            )
 
         logger.info(f"Models will be saved to: {self.models_dir}")
         logger.info(f"Download source: {self.source}")
@@ -60,12 +197,16 @@ class ModelDownloader:
         """Check dependencies required by download source"""
         if self.source == "modelscope":
             if not MODELSCOPE_AVAILABLE:
-                logger.error("Using ModelScope requires modelscope library to be installed first")
+                logger.error(
+                    "Using ModelScope requires modelscope library to be installed first"
+                )
                 logger.error("Please run: pip install modelscope")
                 sys.exit(1)
         elif self.source == "huggingface":
             if not HUGGINGFACE_AVAILABLE:
-                logger.error("Using HuggingFace requires huggingface_hub library to be installed first")
+                logger.error(
+                    "Using HuggingFace requires huggingface_hub library to be installed first"
+                )
                 logger.error("Please run: pip install huggingface_hub")
                 sys.exit(1)
 
@@ -176,62 +317,118 @@ class ModelDownloader:
         except Exception as e:
             logger.error(f"Failed to download Tencent Hunyuan model: {e}")
             raise
-    def create_mineru_config(self, container_root="/data/models"):
+
+    def fix_hunyuan_path(self):
         """
-        Generate Docker-compatible mineru.json
-        (Fixed version: automatically filters out temporary directories like ._____temp)
+        Fix Hunyuan model path - create 'current' symlink
+        Handles both ModelScope and HuggingFace formats
         """
-        logger.info("Generating Docker-compatible MinerU configuration file...")
+        logger.info("[1/2] Checking Hunyuan model...")
 
-        # ---------------------------------------------------------
-        # 1. Locate VLM model path on host machine
-        # ---------------------------------------------------------
-        # Search for all matching paths
-        all_matches = list(self.models_dir.glob("MinerU-VLM/**/MinerU2.5-2509-1.2B"))
+        models_dir = self.models_dir / "HY-MT1.5-1.8B"
+        target_dir = models_dir / "current"
+        source_dir = None
+        rel_source_dir = None
 
-        # [Key fix] Filter out paths with temporary file characteristics (like ._____temp, .cache)
-        valid_matches = [
-            p for p in all_matches
-            if ".____" not in str(p) and "/." not in str(p).replace("\\", "/")
-        ]
+        # Check ModelScope format
+        ms_path = models_dir / "Tencent-Hunyuan" / "HY-MT1___5-1___8B"
+        if ms_path.exists() and ms_path.is_dir():
+            source_dir = ms_path
+            rel_source_dir = Path("Tencent-Hunyuan") / "HY-MT1___5-1___8B"
+            logger.info("  ✅ Found ModelScope format model")
 
-        if not valid_matches:
-            # Try searching for HuggingFace format paths
-            all_matches = list(self.models_dir.glob("MinerU-VLM/**/*--MinerU2.5-2509-1.2B"))
-            valid_matches = [
-                p for p in all_matches
+        # Check HuggingFace format
+        if source_dir is None:
+            hf_patterns = list(models_dir.glob("models--tencent--HY-MT1.5-1.8B/snapshots/*"))
+            if hf_patterns:
+                source_dir = hf_patterns[0]
+                # Calculate relative path
+                rel_source_dir = source_dir.relative_to(models_dir)
+                logger.info("  ✅ Found HuggingFace format model")
+
+        if source_dir is None:
+            logger.error("  ❌ No valid Hunyuan model found")
+            return False
+
+        # Check config.json exists
+        config_file = source_dir / "config.json"
+        if not config_file.exists():
+            logger.error("  ❌ Invalid model directory: missing config.json")
+            return False
+
+        # Remove old symlink if exists
+        if target_dir.is_symlink() or target_dir.exists():
+            target_dir.unlink()
+            logger.info("  🗑️  Deleted old symlink")
+
+        # Create symlink
+        success = create_symlink(source_dir, target_dir)
+        if success:
+            logger.success(f"  ✅ Created symlink: current -> {rel_source_dir}")
+        else:
+            logger.error("  ❌ Failed to create symlink")
+            return False
+
+        return True
+
+    def fix_mineru_path(self):
+        """
+        Fix MinerU model path - generate mineru.json config
+        Handles both ModelScope and HuggingFace formats
+        """
+        logger.info("[2/2] Checking MinerU model...")
+
+        vlm_path = None
+        mineru_base = self.models_dir / "MinerU-VLM"
+
+        # Check HuggingFace format (priority)
+        hf_paths = find_path_by_pattern(mineru_base, "**/snapshots/*/config.json")
+        if hf_paths:
+            vlm_path = hf_paths[0].parent
+            logger.info("  ✅ Found HuggingFace format model")
+
+        # If HuggingFace not found, check ModelScope format
+        if vlm_path is None:
+            ms_paths = find_path_by_pattern(
+                mineru_base,
+                "**/OpenDataLab/MinerU2.5-2509-1.2B/config.json"
+            )
+            if ms_paths:
+                vlm_path = ms_paths[0].parent
+                logger.info("  ✅ Found ModelScope format model")
+
+        # If still not found, try generic search
+        if vlm_path is None:
+            all_paths = find_path_by_pattern(mineru_base, "**/config.json")
+            # Filter out temporary paths
+            valid_paths = [
+                p.parent for p in all_paths
                 if ".____" not in str(p) and "/." not in str(p).replace("\\", "/")
             ]
+            if valid_paths:
+                vlm_path = valid_paths[0]
+                logger.info("  ✅ Found model (generic format)")
 
-        if not valid_matches:
-            logger.error(f"No valid VLM model found under {self.models_dir}!")
-            logger.warning(f"Found but filtered paths: {all_matches}")
-            logger.error("Please check if the model download is complete. It's recommended to delete models/MinerU-VLM folder and re-download.")
-            return
+        if vlm_path is None:
+            logger.error("  ❌ No valid MinerU model found")
+            logger.error(f"     Please check {mineru_base} directory")
+            return False
 
-        # Take the first non-temporary valid path
-        host_vlm_path = valid_matches[0]
-        logger.success(f"Located valid model path: {host_vlm_path}")
-
-        # ---------------------------------------------------------
-        # 2. Convert path: host path -> container absolute path
-        # ---------------------------------------------------------
+        # Calculate relative path
         try:
-            rel_path = host_vlm_path.relative_to(self.models_dir)
+            rel_path = vlm_path.relative_to(self.models_dir)
         except ValueError:
-            logger.error("Model files are not under the specified models directory, cannot generate configuration")
-            return
+            logger.error("  ❌ Cannot calculate relative path")
+            return False
 
-        # Concatenate container path
-        container_vlm_full_path = (Path(container_root) / rel_path).as_posix()
+        # Container path
+        container_vlm_path = f"/data/models/{rel_path.as_posix()}"
 
-        # ---------------------------------------------------------
-        # 3. Build JSON content
-        # ---------------------------------------------------------
+        # Generate config JSON
         config = {
             "config_version": "1.3.1",
             "models-dir": {
-                "vlm": container_vlm_full_path
+                "vlm": container_vlm_path
             },
             "device-mode": "cuda",
             "layout-config": {
@@ -245,49 +442,91 @@ class ModelDownloader:
             }
         }
 
-        # ---------------------------------------------------------
-        # 4. Save file
-        # ---------------------------------------------------------
-        config_file_path = self.models_dir / "mineru.json"
-
+        # Save config file
+        config_file = self.models_dir / "mineru.json"
         try:
-            with open(config_file_path, 'w', encoding='utf-8') as f:
+            with open(config_file, 'w', encoding='utf-8') as f:
                 json.dump(config, f, ensure_ascii=False, indent=4)
-            logger.success(f"Configuration file fixed and regenerated: {config_file_path}")
-            logger.info(f"Container model path will point to: {container_vlm_full_path}")
+            logger.success(f"  ✅ Updated configuration file: mineru.json")
+            logger.info(f"     VLM path: {container_vlm_path}")
+            return True
         except Exception as e:
-            logger.error(f"Failed to write configuration file: {e}")
+            logger.error(f"  ❌ Failed to write configuration file: {e}")
+            return False
+
+    def fix_model_paths(self):
+        """
+        Fix model paths for cross-platform compatibility
+        """
+        logger.info("=" * 60)
+        logger.info("  Model Path Compatibility Fix Tool")
+        logger.info("=" * 60)
+        logger.info(f"Model directory: {self.models_dir}")
+        logger.info("")
+
+        success = True
+
+        # Fix Hunyuan path
+        if not self.fix_hunyuan_path():
+            success = False
+
+        # Fix MinerU path
+        if not self.fix_mineru_path():
+            success = False
+
+        if success:
+            logger.success("=" * 60)
+            logger.success("  ✅ Model path fix complete!")
+            logger.success("=" * 60)
+            logger.info("")
+            logger.info("Unified path description:")
+            logger.info("  Hunyuan model: ./models/HY-MT1.5-1.8B/current")
+            logger.info("  MinerU config:  ./models/mineru.json")
+            logger.info("")
+
+        return success
 
     def download_all(self):
         """
-        Download all models (MinerU VLM + Hunyuan)
+        Download all models (MinerU VLM + Hunyuan) and fix paths
         """
         logger.info("=" * 60)
-        logger.info("LocalScholar-Flow Model Download")
-        logger.info(f"Download source: {self.source}")
+        logger.info("  Paper Flow - Model Download Tool")
         logger.info("=" * 60)
+        logger.info("")
+        logger.info(f"📦 Download source: {self.source}")
+        logger.info("")
+        logger.info("📦 Starting model download...")
+        logger.info("")
 
         try:
             # Download MinerU VLM model
             self.download_mineru_vlm()
-            print()
+            logger.info("")
 
             # Download Hunyuan model
             self.download_hunyuan_model()
-            print()
+            logger.info("")
 
-            # Create configuration file
-            self.create_mineru_config(container_root="/data/models")
+            logger.success("✅ Model download complete!")
+            logger.info("")
+            logger.info("Model file locations:")
+            logger.info("  - MinerU model: ./models/MinerU-VLM/")
+            logger.info("  - Hunyuan model: ./models/HY-MT1.5-1.8B/")
+            logger.info("")
 
-            logger.success("=" * 60)
-            logger.success("All models downloaded!")
-            logger.success("=" * 60)
-            logger.info(f"Models saved in: {self.models_dir}")
-            logger.info("Configuration file: mineru.json")
-            logger.info("\nDocker usage instructions:")
-            logger.info("1. MinerU container will automatically load configuration from mineru.json")
-            logger.info("2. Hunyuan container needs to mount models directory: -v ./models:/models")
-            logger.info("3. Hunyuan model path: /models/HY-MT1.5-1.8B")
+            # Fix model paths
+            self.fix_model_paths()
+
+            logger.info("=" * 60)
+            logger.info("  📦 Next Steps")
+            logger.info("=" * 60)
+            logger.info("")
+            logger.info(
+                "For first-time use, you need to build and start Docker services:"
+            )
+            logger.info("  python scripts/setup_services.py")
+            logger.info("")
 
         except Exception as e:
             logger.error(f"Error occurred during download: {e}")
@@ -296,23 +535,26 @@ class ModelDownloader:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="LocalScholar-Flow Model Download Script - Download MinerU VLM and Tencent Hunyuan models",
+        description="LocalScholar-Flow Model Download Script - "
+                    "Download MinerU VLM and Tencent Hunyuan models (Cross-platform)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   # Download all models from ModelScope (default)
-  python download_models.py
-  bash download.sh
+  python scripts/download_models.py
 
   # Download all models from HuggingFace
-  python download_models.py --source huggingface
-  bash download.sh huggingface
+  python scripts/download_models.py --source huggingface
 
   # Specify model save directory
-  python download_models.py --models-dir /path/to/models
+  python scripts/download_models.py --models-dir /path/to/models
 
   # Download from HuggingFace and specify save directory
-  python download_models.py --source huggingface --models-dir /path/to/models
+  python scripts/download_models.py --source huggingface --models-dir /path/to/models
+
+Cross-platform support:
+  - Windows: python scripts\\download_models.py
+  - Linux/macOS: python scripts/download_models.py
         """
     )
 
