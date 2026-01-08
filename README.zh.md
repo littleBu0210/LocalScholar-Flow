@@ -58,7 +58,7 @@
 
 1. **克隆仓库**
    ```bash
-   git clone https://github.com/yourusername/LocalScholar-Flow.git
+   git clone https://github.com/littleBu0210/LocalScholar-Flow.git
    cd LocalScholar-Flow
    ```
 
@@ -286,7 +286,7 @@ MIT License - 欢迎将此项目用于您的研究和项目！
 
 ## ⭐ Star 历史
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/LocalScholar-Flow&type=Date)](https://star-history.com/#yourusername/LocalScholar-Flow&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=littleBu0210/LocalScholar-Flow&type=Date)](https://star-history.com/#littleBu0210/LocalScholar-Flow&Date)
 
 ### 如果 LocalScholar-Flow 对你有帮助，请在 GitHub 上给个 Star！⭐
 

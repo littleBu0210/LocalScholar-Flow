@@ -58,7 +58,7 @@
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/LocalScholar-Flow.git
+   git clone https://github.com/littleBu0210/LocalScholar-Flow.git
    cd LocalScholar-Flow
    ```
 
@@ -286,7 +286,7 @@ MIT License - feel free to use this project for your own research and projects!
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/LocalScholar-Flow&type=Date)](https://star-history.com/#yourusername/LocalScholar-Flow&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=littleBu0210/LocalScholar-Flow&type=Date)](https://star-history.com/#littleBu0210/LocalScholar-Flow&Date)
 
 ### If you find LocalScholar-Flow useful, please star it on GitHub! ⭐
 
