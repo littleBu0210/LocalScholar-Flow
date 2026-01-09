@@ -76,7 +76,6 @@
 
 3. **Download models**
 
-   **Linux / macOS:**
    ```bash
    # From ModelScope (default, recommended for users in China)
    python scripts/download_models.py
@@ -85,33 +84,23 @@
    python scripts/download_models.py --source huggingface
    ```
 
-   **Windows (Command Prompt/PowerShell):**
-   ```cmd
-   # From ModelScope (default, recommended for users in China)
-   python scripts\download_models.py
-
-   # From HuggingFace
-   python scripts\download_models.py --source huggingface
-   ```
-
    This downloads:
    - **MinerU VLM model** (~2GB) for PDF parsing
    - **Hunyuan model** (~3.6GB) for translation
 
+   After completion, ensure the `models` folder contains:
+   - `MinerU-VLM` folder
+   - `HY-MT1.5-1.8B` folder
+   - `mineru.json` file
+
 4. **Setup Docker services**
 
-   **Linux / macOS:**
    ```bash
-   python scripts/setup_services.py
-   ```
-
-   **Windows (Command Prompt/PowerShell):**
-   ```cmd
-   python scripts\setup_services.py
+   docker compose build
+   docker compose up -d
    ```
 
    This will:
-   - Fix model paths for compatibility
    - Build MinerU and Hunyuan Docker images
    - Start MongoDB, MinerU, and Hunyuan services
 
@@ -128,14 +117,8 @@
 
 2. **Run the complete workflow**
 
-   **Linux / macOS:**
    ```bash
    python scripts/run_all.py
-   ```
-
-   **Windows (Command Prompt/PowerShell):**
-   ```cmd
-   python scripts\run_all.py
    ```
 
    This automatically:
@@ -147,7 +130,6 @@
 
 You can also run each step separately:
 
-**Linux / macOS:**
 ```bash
 # Generate state from PDFs
 python src/generate_state.py
@@ -157,18 +139,6 @@ python src/pdf_to_md.py
 
 # Translate Markdown
 python src/translate_md.py
-```
-
-**Windows (Command Prompt/PowerShell):**
-```cmd
-# Generate state from PDFs
-python src\generate_state.py
-
-# Convert PDF to Markdown
-python src\pdf_to_md.py
-
-# Translate Markdown
-python src\translate_md.py
 ```
 
 ### Output Structure
@@ -224,11 +194,11 @@ docker compose up -d
 # Stop all services
 docker compose down
 
-# View service logs
+# View service logs (check if services started successfully)
 docker compose logs -f
 
-# Restart a specific service
-docker compose restart mineru
+# Restart a specific service (e.g., restart translation model)
+docker compose restart hunyuan
 ```
 
 ### Service Endpoints
@@ -282,14 +252,8 @@ docker compose logs hunyuan
 
 Re-run the setup script to fix model paths:
 
-**Linux / macOS:**
 ```bash
 python scripts/setup_services.py
-```
-
-**Windows (Command Prompt/PowerShell):**
-```cmd
-python scripts\setup_services.py
 ```
 
 ### MongoDB Connection Issues

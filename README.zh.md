@@ -76,7 +76,6 @@
 
 3. **下载模型**
 
-   **Linux / macOS:**
    ```bash
    # 从 ModelScope 下载（默认，推荐中国用户）
    python scripts/download_models.py
@@ -85,33 +84,23 @@
    python scripts/download_models.py --source huggingface
    ```
 
-   **Windows (命令提示符/PowerShell):**
-   ```cmd
-   # 从 ModelScope 下载（默认，推荐中国用户）
-   python scripts\download_models.py
-
-   # 从 HuggingFace 下载
-   python scripts\download_models.py --source huggingface
-   ```
-
    这将下载：
    - **MinerU VLM 模型** (~2GB) 用于PDF解析
    - **混元模型** (~3.6GB) 用于翻译
 
+   执行完毕后，确保 `models` 文件夹下有：
+   - `MinerU-VLM` 文件夹
+   - `HY-MT1.5-1.8B` 文件夹
+   - `mineru.json` 文件
+
 4. **设置Docker服务**
 
-   **Linux / macOS:**
    ```bash
-   python scripts/setup_services.py
-   ```
-
-   **Windows (命令提示符/PowerShell):**
-   ```cmd
-   python scripts\setup_services.py
+   docker compose build
+   docker compose up -d
    ```
 
    这将：
-   - 修复模型路径以确保兼容性
    - 构建MinerU和混元Docker镜像
    - 启动MongoDB、MinerU和混元服务
 
@@ -128,14 +117,8 @@
 
 2. **运行完整工作流**
 
-   **Linux / macOS:**
    ```bash
    python scripts/run_all.py
-   ```
-
-   **Windows (命令提示符/PowerShell):**
-   ```cmd
-   python scripts\run_all.py
    ```
 
    这将自动：
@@ -147,7 +130,6 @@
 
 你也可以分别运行每个步骤：
 
-**Linux / macOS:**
 ```bash
 # 从PDF生成状态
 python src/generate_state.py
@@ -157,18 +139,6 @@ python src/pdf_to_md.py
 
 # 翻译Markdown
 python src/translate_md.py
-```
-
-**Windows (命令提示符/PowerShell):**
-```cmd
-# 从PDF生成状态
-python src\generate_state.py
-
-# 将PDF转换为Markdown
-python src\pdf_to_md.py
-
-# 翻译Markdown
-python src\translate_md.py
 ```
 
 ### 输出结构
@@ -224,11 +194,11 @@ docker compose up -d
 # 停止所有服务
 docker compose down
 
-# 查看服务日志
+# 查看日志（查看服务是否启动成功）
 docker compose logs -f
 
-# 重启特定服务
-docker compose restart mineru
+# 重启特定服务（例如重启翻译模型）
+docker compose restart hunyuan
 ```
 
 ### 服务端点
@@ -282,14 +252,8 @@ docker compose logs hunyuan
 
 重新运行设置脚本修复模型路径：
 
-**Linux / macOS:**
 ```bash
 python scripts/setup_services.py
-```
-
-**Windows (命令提示符/PowerShell):**
-```cmd
-python scripts\setup_services.py
 ```
 
 ### MongoDB 连接问题

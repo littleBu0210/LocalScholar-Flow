@@ -32,6 +32,8 @@ services:
     environment:
       - MINERU_MODEL_SOURCE=local
     volumes:
+      # 挂载整个 models 目录到 /data/models
+      # 这样内部路径就是 /data/models/MinerU-VLM (和 json配置一致)
       - ./models:/data/models
       - ./models/mineru.json:/root/mineru.json
     ports:
@@ -66,7 +68,8 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
     volumes:
-      - ./models:/models
+      # 直接挂载到 /models 根目录
+      - ./models/HY-MT1.5-1.8B:/models/HY-MT1.5-1.8B
     ports:
       - "8001:8000"
     deploy:
@@ -77,7 +80,7 @@ services:
               count: 1
               capabilities: [gpu]
     command: >
-      --model /models/HY-MT1.5-1.8B/current
+      --model /models/HY-MT1.5-1.8B
       --served-model-name hunyuan
       --trust-remote-code
       --host 0.0.0.0
