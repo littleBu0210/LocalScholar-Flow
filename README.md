@@ -24,16 +24,16 @@
 - Powered by [MinerU](https://github.com/opendatalab/MinerU) - An advanced PDF parsing tool
 
 **Example Output:**
-![PDF to Markdown Example](pic/Image.png)
-
+![PDF to Markdown Example](pic/Image1.png)
+![PDF to Markdown Example](pic/Image2.png)
 ### 🌐 AI Translation
 - Translate academic papers using local models
 - Preserve document structure and technical accuracy
 - Powered by [HY-MT](https://github.com/Tencent-Hunyuan/HY-MT) - Tencent's translation model
 
 **Example Output:**
-![PDF to Markdown Example](pic/Image1.png)
-![PDF to Markdown Example](pic/Image2.png)
+![Translation Example](pic/Image3.png)
+![Translation Example](pic/Image4.png)
 
 
 ### 💾 State Management

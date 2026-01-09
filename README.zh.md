@@ -24,16 +24,16 @@
 - 基于 [MinerU](https://github.com/opendatalab/MinerU) - 先进的PDF解析工具
 
 **输出示例：**
-![PDF 转 Markdown 示例](pic/Image.png)
-
+![PDF 转 Markdown 示例](pic/Image1.png)
+![PDF 转 Markdown 示例](pic/Image2.png)
 ### 🌐 AI 翻译
 - 使用本地模型翻译学术论文
 - 保留文档结构和技术准确性
 - 基于 [HY-MT](https://github.com/Tencent-Hunyuan/HY-MT) - 腾讯翻译模型
 
 **输出示例：**
-![翻译示例](pic/Image1.png)
-![翻译示例](pic/Image2.png)
+![翻译示例](pic/Image3.png)
+![翻译示例](pic/Image4.png)
 
 ### 💾 状态管理
 - 使用MongoDB跟踪处理状态
