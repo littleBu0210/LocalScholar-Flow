@@ -264,14 +264,6 @@ docker compose logs mineru
 docker compose logs hunyuan
 ```
 
-### 模型路径问题
-
-重新运行设置脚本修复模型路径：
-
-```bash
-python scripts/setup_services.py
-```
-
 ### MongoDB 连接问题
 
 检查MongoDB是否正在运行：

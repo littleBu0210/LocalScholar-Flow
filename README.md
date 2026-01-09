@@ -264,14 +264,6 @@ docker compose logs mineru
 docker compose logs hunyuan
 ```
 
-### Model Path Issues
-
-Re-run the setup script to fix model paths:
-
-```bash
-python scripts/setup_services.py
-```
-
 ### MongoDB Connection Issues
 
 Check if MongoDB is running:
