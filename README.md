@@ -108,6 +108,22 @@
 
 ## 🚀 Usage
 
+### Prerequisites Check
+
+Before processing papers, ensure all Docker services are running properly:
+
+```bash
+# Check service health status
+python scripts/check_service.py
+```
+
+This script will monitor and verify:
+- MongoDB connection (port 27016)
+- MinerU service (port 8000)
+- Hunyuan translation model (port 8001)
+
+Wait until all services show `✅` status before proceeding.
+
 ### Simple Workflow
 
 1. **Place PDF papers** in the `pdfs/` directory:
