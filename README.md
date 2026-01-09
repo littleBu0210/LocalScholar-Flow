@@ -18,35 +18,43 @@
 
 ## ✨ Features
 
-- **📄 PDF to Markdown Conversion**
-  - Convert academic PDF papers to Markdown format
-  - Preserve formatting, images, and mathematical formulas
-  - Powered by [MinerU](https://github.com/opendatalab/MinerU) - An advanced PDF parsing tool
+### 📄 PDF to Markdown Conversion
+- Convert academic PDF papers to Markdown format
+- Preserve formatting, images, and mathematical formulas
+- Powered by [MinerU](https://github.com/opendatalab/MinerU) - An advanced PDF parsing tool
 
-- **🌐 AI Translation**
-  - Translate academic papers using local models
-  - Preserve document structure and technical accuracy
-  - Powered by [HY-MT](https://github.com/Tencent-Hunyuan/HY-MT) - Tencent's translation model
+**Example Output:**
+![PDF to Markdown Example](pic/Image.png)
 
-- **💾 State Management**
-  - Track processing status using MongoDB
-  - Resume from where you left off
-  - No duplicate work
+### 🌐 AI Translation
+- Translate academic papers using local models
+- Preserve document structure and technical accuracy
+- Powered by [HY-MT](https://github.com/Tencent-Hunyuan/HY-MT) - Tencent's translation model
 
-- **⚡ Batch Processing**
-  - Process multiple papers simultaneously
-  - Efficient resource utilization
-  - Progress tracking for each paper
+**Example Output:**
+![PDF to Markdown Example](pic/Image1.png)
+![PDF to Markdown Example](pic/Image2.png)
 
-- **🐳 Docker Support**
-  - All services run in Docker containers
-  - Easy deployment and setup
-  - Isolated environment for dependencies
 
-- **🌍 Cross-Platform Support**
-  - Works on Linux, Windows, and macOS
-  - Automatic path handling for different operating systems
-  - Smart symlink management for Docker compatibility
+### 💾 State Management
+- Track processing status using MongoDB
+- Resume from where you left off
+- No duplicate work
+
+### ⚡ Batch Processing
+- Process multiple papers simultaneously
+- Efficient resource utilization
+- Progress tracking for each paper
+
+### 🐳 Docker Support
+- All services run in Docker containers
+- Easy deployment and setup
+- Isolated environment for dependencies
+
+### 🌍 Cross-Platform Support
+- Works on Linux, Windows, and macOS
+- Automatic path handling for different operating systems
+- Smart symlink management for Docker compatibility
 
 ---
 

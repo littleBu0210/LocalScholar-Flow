@@ -18,35 +18,42 @@
 
 ## ✨ 功能特性
 
-- **📄 PDF 转 Markdown**
-  - 将学术论文PDF转换为Markdown格式
-  - 保留格式、图片和数学公式
-  - 基于 [MinerU](https://github.com/opendatalab/MinerU) - 先进的PDF解析工具
+### 📄 PDF 转 Markdown
+- 将学术论文PDF转换为Markdown格式
+- 保留格式、图片和数学公式
+- 基于 [MinerU](https://github.com/opendatalab/MinerU) - 先进的PDF解析工具
 
-- **🌐 AI 翻译**
-  - 使用本地模型翻译学术论文
-  - 保留文档结构和技术准确性
-  - 基于 [HY-MT](https://github.com/Tencent-Hunyuan/HY-MT) - 腾讯翻译模型
+**输出示例：**
+![PDF 转 Markdown 示例](pic/Image.png)
 
-- **💾 状态管理**
-  - 使用MongoDB跟踪处理状态
-  - 支持断点续传
-  - 避免重复工作
+### 🌐 AI 翻译
+- 使用本地模型翻译学术论文
+- 保留文档结构和技术准确性
+- 基于 [HY-MT](https://github.com/Tencent-Hunyuan/HY-MT) - 腾讯翻译模型
 
-- **⚡ 批量处理**
-  - 同时处理多篇论文
-  - 高效资源利用
-  - 每篇论文独立进度跟踪
+**输出示例：**
+![翻译示例](pic/Image1.png)
+![翻译示例](pic/Image2.png)
 
-- **🐳 Docker 支持**
-  - 所有服务运行在Docker容器中
-  - 简化部署和设置
-  - 依赖隔离环境
+### 💾 状态管理
+- 使用MongoDB跟踪处理状态
+- 支持断点续传
+- 避免重复工作
 
-- **🌍 跨平台支持**
-  - 支持 Linux、Windows 和 macOS
-  - 自动处理不同操作系统的路径
-  - 智能符号链接管理，确保 Docker 兼容性
+### ⚡ 批量处理
+- 同时处理多篇论文
+- 高效资源利用
+- 每篇论文独立进度跟踪
+
+### 🐳 Docker 支持
+- 所有服务运行在Docker容器中
+- 简化部署和设置
+- 依赖隔离环境
+
+### 🌍 跨平台支持
+- 支持 Linux、Windows 和 macOS
+- 自动处理不同操作系统的路径
+- 智能符号链接管理，确保 Docker 兼容性
 
 ---
 
