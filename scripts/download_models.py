@@ -69,9 +69,45 @@ class ModelDownloader:
                 return path.parent
         return None
 
+    def _copy_files_resolving_symlinks(self, source_path: Path, target_path: Path):
+        """
+        Copy files from source to target, resolving all symlinks.
+        Works cross-platform (Linux/Windows).
+        """
+        target_path.mkdir(parents=True, exist_ok=True)
+
+        for item in source_path.iterdir():
+            source_item = source_path / item.name
+            target_item = target_path / item.name
+
+            if source_item.is_dir():
+                # Recursively copy subdirectories
+                self._copy_files_resolving_symlinks(source_item, target_item)
+            elif source_item.is_file():
+                # Regular file, copy directly
+                shutil.copy2(source_item, target_item)
+            elif source_item.is_symlink():
+                # Symlink: resolve and copy the actual file
+                try:
+                    real_path = source_item.resolve()
+                    if real_path.is_file():
+                        shutil.copy2(real_path, target_item)
+                        logger.debug(f"Resolved symlink: {item.name} -> {real_path}")
+                    elif real_path.is_dir():
+                        # Symlink points to directory, recursively copy
+                        self._copy_files_resolving_symlinks(real_path, target_item)
+                except Exception as e:
+                    logger.warning(f"Failed to resolve symlink {item.name}: {e}")
+                    # Fallback: try to copy the link target directly
+                    try:
+                        shutil.copy2(source_item, target_item)
+                    except:
+                        logger.error(f"Cannot copy {item.name}, skipping")
+
     def _move_and_organize(self, source_path: Path, target_name: str):
         """
-        Move downloaded model files to final standard directory
+        Move downloaded model files to final standard directory.
+        Handles symlinks by resolving them during copy (cross-platform).
         """
         final_path = self.base_dir / target_name
 
@@ -83,23 +119,34 @@ class ModelDownloader:
                 return
             else:
                 # It's an empty folder, delete it to allow move
-                shutil.rmtree(final_path)
+                final_path.rmdir()
 
-        logger.info(f"Moving model to standard location: {final_path}")
-        try:
-            # shutil.move behaves differently across drives or specific systems,
-            # ensure it's a move operation here
-            shutil.move(str(source_path), str(final_path))
-            logger.success(f"✅ Model ready: {final_path}")
-        except Exception as e:
-            logger.error(f"Failed to move files: {e}")
-            # Try copying as fallback
+        logger.info(f"Organizing model files to: {final_path}")
+
+        # Check if source contains symlinks (common in HF cache structure)
+        has_symlinks = any(f.is_symlink() for f in source_path.rglob("*") if f.is_file() or f.is_symlink())
+
+        if has_symlinks:
+            logger.info("Detected symlinks in source, resolving and copying files...")
             try:
-                shutil.copytree(source_path, final_path)
-                logger.success(f"✅ Model copied to place: {final_path}")
-            except Exception as e2:
-                logger.error(f"Copy also failed: {e2}")
+                self._copy_files_resolving_symlinks(source_path, final_path)
+                logger.success(f"✅ Model ready (symlinks resolved): {final_path}")
+            except Exception as e:
+                logger.error(f"Failed to copy files with symlink resolution: {e}")
                 sys.exit(1)
+        else:
+            # No symlinks, try direct move first (faster)
+            try:
+                shutil.move(str(source_path), str(final_path))
+                logger.success(f"✅ Model ready (moved): {final_path}")
+            except Exception as e:
+                logger.warning(f"Direct move failed: {e}, trying copy instead...")
+                try:
+                    shutil.copytree(source_path, final_path)
+                    logger.success(f"✅ Model ready (copied): {final_path}")
+                except Exception as e2:
+                    logger.error(f"Copy also failed: {e2}")
+                    sys.exit(1)
 
     def download_model(self, model_key, target_dir_name):
         """Common download logic"""
@@ -129,11 +176,14 @@ class ModelDownloader:
             else:
                 model_id = self.HF_MINERU if target_dir_name == self.DIR_MINERU else self.HF_HUNYUAN
                 # HuggingFace download
+                # Use local_dir to get actual files in specified directory
+                # In modern huggingface_hub, local_dir copies actual files (no symlinks)
+                # This is cross-platform compatible (Linux/Windows)
+                local_files_dir = current_temp / "files"
                 download_path = hf_snapshot_download(
                     repo_id=model_id,
                     cache_dir=str(current_temp),
-                    local_dir_use_symlinks=False, # Key: HF don't use symlinks, download files directly
-                    resume_download=True
+                    local_dir=str(local_files_dir)
                 )
 
             # Find the actual model folder (handle nested directory structure)
