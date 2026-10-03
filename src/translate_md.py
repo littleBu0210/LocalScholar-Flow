@@ -88,7 +88,9 @@ class MarkdownParser:
     """Markdown parser: Responsible for splitting and reassembling documents"""
 
     # Match references section heading
-    REFERENCES_PATTERN = re.compile(r'\n#+.*(References?|REFERENCES?).*\n')
+    REFERENCES_PATTERN = re.compile(
+        r'(?im)^[ \t]*#{1,6}[ \t]*(?:references?|bibliography)[ \t]*$'
+    )
 
     def __init__(self, config: Dict):
         self.config = config['translation']
@@ -100,6 +102,17 @@ class MarkdownParser:
         if matches:
             return matches[-1].start()
         return len(content)
+
+    @classmethod
+    def localize_references_heading(cls, references_section: str) -> str:
+        """Translate only the references heading, preserving citation entries."""
+        if not references_section:
+            return references_section
+        return cls.REFERENCES_PATTERN.sub(
+            lambda match: f"{'#' * match.group(0).count('#')} 参考文献",
+            references_section,
+            count=1,
+        )
 
     def split_by_separators(self, content: str) -> List[Tuple[str, bool]]:
         """
@@ -467,7 +480,13 @@ class TranslationPipeline:
         translated_content = "\n\n".join(parts)
 
         if references_section:
-            translated_content += references_section
+            localized_references = self.parser.localize_references_heading(
+                references_section
+            ).lstrip()
+            if translated_content.strip():
+                translated_content = translated_content.rstrip() + "\n\n" + localized_references
+            else:
+                translated_content = localized_references
 
         return translated_content
 

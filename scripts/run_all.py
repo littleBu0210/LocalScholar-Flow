@@ -11,6 +11,8 @@ import os
 import sys
 import platform
 import subprocess
+import time
+import urllib.request
 from pathlib import Path
 from loguru import logger
 
@@ -123,6 +125,41 @@ def run_python_script(script_path, description):
         return False
 
 
+def compose(project_dir, *args):
+    """Run Docker Compose from the project directory."""
+    result = subprocess.run(["docker", "compose", *args], cwd=project_dir)
+    return result.returncode == 0
+
+
+def wait_for_url(url, timeout=300):
+    """Wait until an HTTP endpoint answers successfully."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(url, timeout=3) as response:
+                if response.status == 200:
+                    return True
+        except Exception:
+            pass
+        time.sleep(2)
+    return False
+
+
+def select_gpu_service(project_dir, service):
+    """Keep only one vLLM model resident, required for 8GB GPUs."""
+    other = "hunyuan" if service == "mineru" else "mineru"
+    logger.info(f"Switching GPU service: {other} -> {service}")
+    if not compose(project_dir, "stop", other):
+        return False
+    if not compose(project_dir, "up", "-d", "mongodb", service):
+        return False
+    ready_url = ("http://localhost:8000/docs" if service == "mineru"
+                 else "http://localhost:8001/v1/models")
+    if not wait_for_url(ready_url):
+        logger.error(f"Service did not become ready: {service}")
+        return False
+    return True
+
 # ============================================
 # Workflow steps
 # ============================================
@@ -194,30 +231,26 @@ def main():
     script_dir = Path(__file__).parent.absolute()
     project_dir = script_dir.parent
 
-    # Verify conda environment
-    if not activate_conda_env("LocalScholar-Flow"):
-        logger.error("")
-        logger.error("Please activate the conda environment first:")
-        logger.error("  conda activate LocalScholar-Flow")
-        logger.error("")
-        logger.error("Then run this script again.")
-        sys.exit(1)
-
-    logger.info("")
-
     # Step 1: Generate state
+    if not compose(project_dir, "up", "-d", "mongodb"):
+        logger.error("❌ Could not start MongoDB")
+        sys.exit(1)
     if not step_1_generate_state(project_dir):
         logger.error("")
         logger.error("❌ State generation failed")
         sys.exit(1)
 
     # Step 2: PDF to Markdown
+    if not select_gpu_service(project_dir, "mineru"):
+        sys.exit(1)
     if not step_2_pdf_to_markdown(project_dir):
         logger.error("")
         logger.error("❌ PDF conversion failed")
         sys.exit(1)
 
     # Step 3: Translate Markdown
+    if not select_gpu_service(project_dir, "hunyuan"):
+        sys.exit(1)
     if not step_3_translate_markdown(project_dir):
         logger.error("")
         logger.error("❌ Translation failed")

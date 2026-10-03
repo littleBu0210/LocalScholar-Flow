@@ -50,10 +50,11 @@ services:
               device_ids: ["0"]
               capabilities: [gpu]
     entrypoint: mineru-api
+    # The workflow runner starts GPU services one at a time on 8GB cards.
     command:
       --host 0.0.0.0
       --port 8000
-      --gpu-memory-utilization 0.4
+      --gpu-memory-utilization 0.80
 
   # ==========================================
   # Service 3: Hunyuan (translation)
@@ -85,8 +86,10 @@ services:
       --trust-remote-code
       --host 0.0.0.0
       --port 8000
-      --gpu-memory-utilization 0.4
-      --max-model-len 8192
+      --gpu-memory-utilization 0.50
+      --max-model-len 4096
+      --max-num-seqs 1
+      --enforce-eager
       --dtype bfloat16
 
 volumes:

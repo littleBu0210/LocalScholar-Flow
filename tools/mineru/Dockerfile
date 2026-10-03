@@ -15,8 +15,9 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install mineru latest
-RUN python3 -m pip install -U 'mineru[core]>=2.7.0' --break-system-packages && \
+# Pin the API version used by src/pdf_to_md.py. MinerU 3.x renamed the
+# vlm-vllm-async-engine backend and changed the request contract.
+RUN python3 -m pip install -U 'mineru[core]==2.7.0' --break-system-packages && \
     python3 -m pip cache purge
 
 # Set environment variable to use local models

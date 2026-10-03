@@ -23,6 +23,9 @@ huggingface_hub>=0.20.0
 # Logging
 loguru>=0.7.0
 
+# Local web interface
+streamlit[pdf]>=1.61.0,<2
+
 # Note: The following are Python standard libraries and don't need installation:
 # - pathlib
 # - json

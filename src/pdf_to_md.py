@@ -34,7 +34,7 @@ def process_pdf(pdf_name, pdf_path, db, config):
                         ('return_images', (None, 'true')),
                         ('response_format_zip', (None, 'true')),
                     ]
-                    response = requests.post(api_url, files=files, headers={'accept': 'application/json'}, timeout=120)
+                    response = requests.post(api_url, files=files, headers={'accept': 'application/json'}, timeout=600)
                     if response.status_code == 200: break
             except:
                 if attempt == 2: return False
